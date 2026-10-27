@@ -17,7 +17,7 @@ concurrency:
 jobs:
   api-unit:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -28,6 +28,12 @@ jobs:
       - run: npm install -g pnpm@10.27.0
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Build api workspace dependencies
+        run: pnpm --filter 'directus^...' run build
+        env:
+          NODE_OPTIONS: --max_old_space_size=6144
+          npm_config_workspace_concurrency: 2
 
       - name: Targeted unit tests
         run: pnpm exec vitest run src/utils/get-cache-key.test.ts
