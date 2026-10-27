@@ -19,7 +19,9 @@ Directus 安全 fork,目的:在 BUSL 授权窗口内(2029-04-30 转 GPL v3 前)�
 
 ## 监控
 
-- 每周手动或 cron:`sh fork-tools/osv-check.sh`(version 定向查询,新漏洞 exit 1)。
+- 自动:`fork-osv-watch` workflow(触发器在 main,每周一 10:30 北京时间)checkout `fork/11.17.4` 跑 `fork-tools/osv-watch.sh`,新 GHSA 自动开 issue(标签 `osv-tripwire`,含 CVSS/修复版本/上游参考 + triage 清单)。
+- triage 处置:修复 → 重写实现 + smoke + tag `11.17.4-sec.N` + 台账;接受 → 追加 `fork-tools/.known-osv-ids` + 台账“已知未修复” + 关 issue。
+- 手动:Actions → fork-osv-watch → Run workflow(可填 TEST_ID 强制测试);本地 `DRY_RUN=1 sh fork-tools/osv-watch.sh <GHSA-ID>` 预览,`sh fork-tools/osv-check.sh` 仍可单独查询。
 - triage 规则见 SECURITY_BACKPORTS.md。
 
 ## Kill criteria(重评升级 12 的信号)
@@ -39,4 +41,5 @@ Directus 安全 fork,目的:在 BUSL 授权窗口内(2029-04-30 转 GPL v3 前)�
 
 - ghcr 包首次推送后默认 private;需要服务器匿名拉取时到 GitHub → Packages → directus 改 public。
 - CI 用 GHA cache 缓存 pnpm 层;首次构建 ~7min,之后显著加快。
+- main 上仅有 `fork-osv-watch` 触发器一个自有文件(scheduled workflow 只认默认分支);若未来重置 main 同步上游,需保留该文件。
 - 12 的 `.env` 变化(IP_TRUST_PROXY 等)与本 fork 无关;若将来升 12 再处理。
