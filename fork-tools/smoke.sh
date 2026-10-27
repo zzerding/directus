@@ -29,5 +29,5 @@ until curl -fsS -o /dev/null "$URL/server/health" 2>/dev/null; do
 done
 curl -fsS -o /dev/null "$URL/server/health"
 curl -fsS -o /dev/null "$URL/server/ping"
-curl -fsS "$URL/" | grep -qi 'id="app"'
+curl -fsSL "$URL/" | grep -qi 'id="app"'
 echo "smoke OK: $URL"
