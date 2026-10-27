@@ -123,6 +123,34 @@ describe('get cache key', async () => {
 		expect(hasDuplicate).toBeFalsy();
 	});
 
+	describe('share scoping', async () => {
+		const shareA = '11111111-1111-1111-1111-111111111111';
+		const shareB = '22222222-2222-2222-2222-222222222222';
+		const shareReq = (share: string): any => ({
+			method,
+			originalUrl: restUrl,
+			accountability: { user: null, share },
+		});
+		const anonReq: any = { method, originalUrl: restUrl };
+		const userReq: any = { method, originalUrl: restUrl, accountability };
+
+		test('two different shares on the same URL get different keys', async () => {
+			expect(await getCacheKey(shareReq(shareA))).not.toEqual(await getCacheKey(shareReq(shareB)));
+		});
+
+		test('a share request does not collide with an anonymous request on the same URL', async () => {
+			expect(await getCacheKey(shareReq(shareA))).not.toEqual(await getCacheKey(anonReq));
+		});
+
+		test('a share request does not collide with an authenticated user on the same URL', async () => {
+			expect(await getCacheKey(shareReq(shareA))).not.toEqual(await getCacheKey(userReq));
+		});
+
+		test('the same share token hitting the same URL hits the same bucket', async () => {
+			expect(await getCacheKey(shareReq(shareA))).toEqual(await getCacheKey(shareReq(shareA)));
+		});
+	});
+
 	test('should create a unique key for GraphQL requests with different variables', async () => {
 		const query = 'query Test ($name: String) { test (filter: { name: { _eq: $name } }) { id } }';
 		const operationName = 'test';
