@@ -1,0 +1,31 @@
+name: fork-osv-watch
+
+on:
+  schedule:
+    - cron: '30 2 * * 1' # Mondays 02:30 UTC (10:30 Beijing)
+  workflow_dispatch:
+    inputs:
+      test_id:
+        description: 'Force one OSV id through the pipeline (e.g. GHSA-xxxx)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: fork-osv-watch
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork working branch (script + .known-osv-ids live here)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: fork/11.17.4
+      - name: OSV tripwire -> triage issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: sh fork-tools/osv-watch.sh "${{ inputs.test_id }}"
