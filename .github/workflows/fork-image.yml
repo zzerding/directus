@@ -1,0 +1,59 @@
+name: fork-image
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*-sec.*'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/directus
+  IMAGE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || format('run-{0}', github.run_id) }}
+  ALIYUN_IMAGE: ${{ vars.FORK_ALIYUN_IMAGE }}
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: Build (load)
+        uses: docker/build-push-action@ee4ca427a2f43b6a16632044ca514c076267da23 # v6.19.0
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: ${{ env.IMAGE }}:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke
+        run: sh fork-tools/smoke.sh --image "${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
+
+      - name: Login ghcr.io
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push ghcr.io
+        run: docker push "${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
+
+      - name: Login Aliyun
+        if: github.ref_type == 'tag' && env.ALIYUN_IMAGE != ''
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ vars.FORK_ALIYUN_REGISTRY }}
+          username: ${{ secrets.FORK_ALIYUN_USERNAME }}
+          password: ${{ secrets.FORK_ALIYUN_PASSWORD }}
+
+      - name: Push Aliyun
+        if: github.ref_type == 'tag' && env.ALIYUN_IMAGE != ''
+        run: docker push "${{ env.ALIYUN_IMAGE }}:${{ env.IMAGE_TAG }}"
