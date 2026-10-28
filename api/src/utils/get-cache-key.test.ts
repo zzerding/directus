@@ -126,11 +126,13 @@ describe('get cache key', async () => {
 	describe('share scoping', async () => {
 		const shareA = '11111111-1111-1111-1111-111111111111';
 		const shareB = '22222222-2222-2222-2222-222222222222';
+
 		const shareReq = (share: string): any => ({
 			method,
 			originalUrl: restUrl,
 			accountability: { user: null, share },
 		});
+
 		const anonReq: any = { method, originalUrl: restUrl };
 		const userReq: any = { method, originalUrl: restUrl, accountability };
 
