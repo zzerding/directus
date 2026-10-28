@@ -192,3 +192,34 @@ test(`Returns true if IPv6-mapped AWS metadata IP is checked against explicit de
 	expect(isDeniedIp('0:0:0:0:0:ffff:a9fe:a9fe')).toBe(true);
 	expect(isDeniedIp('0000:0000:0000:0000:0000:ffff:a9fe:a9fe')).toBe(true);
 });
+
+test(`Returns true for the unspecified address itself when deny list contains 0.0.0.0`, async () => {
+	vi.mocked(useEnv).mockReturnValue({ IMPORT_IP_DENY_LIST: ['0.0.0.0'] });
+
+	vi.mocked(os.networkInterfaces).mockReturnValue({});
+
+	expect(isDeniedIp('0.0.0.0')).toBe(true);
+	expect(isDeniedIp('::')).toBe(true);
+});
+
+test(`Returns true for addresses in the 0.0.0.0/8 network when deny list contains 0.0.0.0`, async () => {
+	vi.mocked(useEnv).mockReturnValue({ IMPORT_IP_DENY_LIST: ['0.0.0.0'] });
+
+	vi.mocked(os.networkInterfaces).mockReturnValue({});
+
+	expect(isDeniedIp('0.1.2.3')).toBe(true);
+	expect(isDeniedIp('0.255.255.255')).toBe(true);
+
+	// IPv4-mapped forms of the same network
+	expect(isDeniedIp('::ffff:0.1.2.3')).toBe(true);
+	expect(isDeniedIp('::ffff:1:203')).toBe(true); // 0.1.2.3 in hex
+});
+
+test(`Returns false for public IPs when deny list contains 0.0.0.0`, async () => {
+	vi.mocked(useEnv).mockReturnValue({ IMPORT_IP_DENY_LIST: ['0.0.0.0'] });
+
+	vi.mocked(os.networkInterfaces).mockReturnValue({});
+
+	expect(isDeniedIp('203.0.113.1')).toBe(false);
+	expect(isDeniedIp('2606:4700::1111')).toBe(false);
+});
