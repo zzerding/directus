@@ -29,12 +29,15 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Lint api
+        run: pnpm exec eslint api/src
+
       - name: Build api workspace dependencies
         run: pnpm --filter 'directus^...' run build
         env:
           NODE_OPTIONS: --max_old_space_size=6144
           npm_config_workspace_concurrency: 2
 
-      - name: Targeted unit tests
-        run: pnpm exec vitest run src/utils/get-cache-key.test.ts
+      - name: Unit tests (full api suite)
+        run: pnpm test
         working-directory: api
