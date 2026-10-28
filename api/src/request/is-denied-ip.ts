@@ -18,6 +18,13 @@ export function isDeniedIp(ip: string): boolean {
 
 			if (blockNetwork === '0.0.0.0') {
 				blockNetworkInterfaces = true;
+
+				// 0.0.0.0 routes to localhost on Linux and :: is the IPv6
+				// unspecified address; neither is covered by the local
+				// interfaces resolved below
+				blockList.parseSubnet('0.0.0.0/8');
+				blockList.parseAddress('::');
+
 				continue;
 			}
 
